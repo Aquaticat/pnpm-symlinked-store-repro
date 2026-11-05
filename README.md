@@ -54,5 +54,37 @@ the source fix belongs in pnpm's handling of relative symlinks.
 
 ## Source prototype
 
-The source patch and its verification evidence will be added after checking this exact standalone reproduction.
-Published CI results will be linked here once their step conclusions and diagnostic logs have been inspected.
+The [source patch](patches/pnpm-symlinked-store-path.patch) targets
+pnpm commit `b4a2abfcb7cd17692ea90cea15ce7457fa7b4260`.
+It uses the physical link parent for both link creation and the reuse check,
+while preserving the target alias so subsequent retargeting remains visible.
+The upstream code's [MIT license](patches/UPSTREAM-LICENSE) accompanies the patch.
+
+The new regression failed on unchanged source with `NotFound`.
+With the patch,
+the Linux symlink test group passed all 19 tests,
+including creation with missing parents,
+target retargeting,
+reuse,
+and repair of an existing broken link.
+
+```sh
+# Disposable checkout of the upstream commit, after applying the patch
+node pnpm/scripts/run-rust-tests.mjs --package pnpm-fs --filter-expr 'test(symlink_dir::)'
+```
+
+This is a source prototype,
+not a replacement pnpm distribution.
+The full CLI has not been rebuilt from it.
+
+## Verification record
+
+The exact standalone commands in this README were exercised on Linux with pnpm `12.16.1`
+and Node `26.13.0`:
+the real-directory control passed,
+the symlinked import failed with `ERR_MODULE_NOT_FOUND`,
+and the canonical-path workaround passed.
+
+CI results will be linked after their step conclusions and diagnostic logs are inspected.
+
+Written by an agent (Codex, GPT-6).
