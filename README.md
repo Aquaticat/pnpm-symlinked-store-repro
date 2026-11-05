@@ -85,16 +85,19 @@ the real-directory control passed,
 the symlinked import failed with `ERR_MODULE_NOT_FOUND`,
 and the canonical-path workaround passed.
 
-Verified CI evidence for commit `8c84d48f8c36ba3729a3e2f1fc982cf950f7e268`:
+Verified reproduction evidence for commit `3f9f3ce8a5b2e56865fa5278c220e550375668ad`:
 
-- [Reproduction run 42055610522](https://github.com/Aquaticat/pnpm-symlinked-store-repro/actions/runs/42055610522).
-- [Repeat run 42056201476](https://github.com/Aquaticat/pnpm-symlinked-store-repro/actions/runs/42056201476).
-- [Source-patch verification](https://github.com/Aquaticat/pnpm-symlinked-store-repro/actions/runs/42055609601).
+- [Reproduction run 42063180350](https://github.com/Aquaticat/pnpm-symlinked-store-repro/actions/runs/42063180350).
+- [Repeat run 42063626526](https://github.com/Aquaticat/pnpm-symlinked-store-repro/actions/runs/42063626526).
+
+The unchanged source prototype was verified separately at commit `8c84d48f8c36ba3729a3e2f1fc982cf950f7e268`:
+[source-patch verification](https://github.com/Aquaticat/pnpm-symlinked-store-repro/actions/runs/42055609601).
 
 The reproduction runs fail specifically at `Assert the symlinked store resolves its dependency`:
 
 - Linux:
-  pnpm `12.16.1`,
+  pnpm `10.34.9`,
+  `12.16.1`,
   `12.18.0`,
   and `11.28.11` produce `ERR_MODULE_NOT_FOUND` for `proper-lockfile`.
 - macOS and Windows:
@@ -103,10 +106,12 @@ The reproduction runs fail specifically at `Assert the symlinked store resolves 
   the real-directory import,
   the symlinked-directory install,
   and the canonical-path workaround.
-- The `10.34.9` job passes,
-  but its consumer stays under the project's `node_modules/.pnpm`.
-  This fixture does not exercise a global virtual store on that release,
-  so this is not evidence that its global-store behavior is fixed.
+
+The initial v10 green result did not test the global store:
+pnpm v10 forcibly turns that setting off in CI mode.
+The corrected fixture sets `CI=false` for its child processes and verifies that the consumer is physically
+inside the shared store before testing the import.
+Both linked runs now reproduce the v10 failure with passing setup and control steps.
 
 The source-patch workflow is green.
 Its logs show the new regression failing with `NotFound` on unchanged source,
