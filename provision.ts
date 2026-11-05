@@ -1,4 +1,4 @@
-// Bootstrap uses JavaScript syntax so CI's preinstalled Node can read it from stdin.
+// CI's preinstalled Node bootstraps the checksum-pinned runtime and package manager.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -15,7 +15,12 @@ const nodeRoot = resolve('.tools', 'node');
 const pnpmRoot = resolve('.tools', `pnpm-${version}`);
 
 /** Download and verify an artifact before extracting or executing any bytes. */
-async function install({ baseUrl, artifact, destination, strip }) {
+async function install({ baseUrl, artifact, destination, strip }: {
+  baseUrl: string;
+  artifact: { file: string; sha256: string };
+  destination: string;
+  strip: string[];
+}) {
   mkdirSync(destination, { recursive: true });
   const response = await fetch(`${baseUrl}/${artifact.file}`);
   assert(response.ok, `Download failed: ${response.status} ${response.url}`);

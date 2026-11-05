@@ -34,7 +34,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install checksum-pinned Node and pnpm
-        run: node --input-type=module < provision.ts
+        run: node provision.ts
       - name: Install with a real store directory
         run: node reproduce.ts prepare control
       - name: Assert the real-directory control resolves

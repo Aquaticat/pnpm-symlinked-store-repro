@@ -16,7 +16,7 @@ const statePath = join(work, `${version}-${mode}.json`);
 const expected = 'proper-lockfile shim imported';
 
 /** Isolate package-manager configuration without changing the real home or store. */
-function fixtureEnvironment(root) {
+function fixtureEnvironment(root: string) {
   const inherited = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^(npm|pnpm)_config_/i.test(key)));
   const config = join(root, 'config');
   mkdirSync(config, { recursive: true });
@@ -26,13 +26,13 @@ function fixtureEnvironment(root) {
 }
 
 /** Install the same synthetic consumer with the chosen spelling of its store path. */
-function install({ root, project, store }) {
+function install({ root, project, store }: { root: string; project: string; store: string }) {
   writeFileSync(join(project, 'pnpm-workspace.yaml'), `packages: []\nstoreDir: ${JSON.stringify(store)}\nenableGlobalVirtualStore: true\noverrides:\n  proper-lockfile: link:shim\n`);
   execFileSync(pnpm, ['install', '--offline', '--ignore-scripts', '--no-frozen-lockfile', '--force'], { cwd: project, env: fixtureEnvironment(root), stdio: 'inherit' });
 }
 
 /** Check the actual Node import, and print the installed link for diagnosis. */
-function assertImport(state) {
+function assertImport(state: { root: string; project: string }) {
   const result = spawnSync(process.execPath, ['--input-type=module', '--eval', 'console.log((await import("fixture-consumer")).default)'], { cwd: state.project, encoding: 'utf8', env: fixtureEnvironment(state.root) });
   process.stdout.write(result.stdout ?? '');
   process.stderr.write(result.stderr ?? '');
