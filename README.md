@@ -85,6 +85,38 @@ the real-directory control passed,
 the symlinked import failed with `ERR_MODULE_NOT_FOUND`,
 and the canonical-path workaround passed.
 
-CI results will be linked after their step conclusions and diagnostic logs are inspected.
+Verified CI evidence for commit `8c84d48f8c36ba3729a3e2f1fc982cf950f7e268`:
+
+- [Reproduction run 42055610522](https://github.com/Aquaticat/pnpm-symlinked-store-repro/actions/runs/42055610522).
+- [Repeat run 42056201476](https://github.com/Aquaticat/pnpm-symlinked-store-repro/actions/runs/42056201476).
+- [Source-patch verification](https://github.com/Aquaticat/pnpm-symlinked-store-repro/actions/runs/42055609601).
+
+The reproduction runs fail specifically at `Assert the symlinked store resolves its dependency`:
+
+- Linux:
+  pnpm `12.16.1`,
+  `12.18.0`,
+  and `11.28.11` produce `ERR_MODULE_NOT_FOUND` for `proper-lockfile`.
+- macOS and Windows:
+  pnpm `12.18.0` produces the same diagnostic.
+- Every affected job passes provisioning,
+  the real-directory import,
+  the symlinked-directory install,
+  and the canonical-path workaround.
+- The `10.34.9` job passes,
+  but its consumer stays under the project's `node_modules/.pnpm`.
+  This fixture does not exercise a global virtual store on that release,
+  so this is not evidence that its global-store behavior is fixed.
+
+The source-patch workflow is green.
+Its logs show the new regression failing with `NotFound` on unchanged source,
+followed by 19 passing symlink tests with the patch.
+Both reproduction runs' step conclusions and missing-package diagnostics were inspected;
+the patch run's failing control and passing test summary were inspected too.
+
+An initial Windows harness run failed during extraction because Git Bash's GNU tar
+treated a drive letter as a remote host.
+The corrected harness selects Windows' native `System32/tar.exe`.
+The evidence runs linked here pass that setup step and reach the import assertion.
 
 Written by an agent (Codex, GPT-6).
