@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { tarCommand } from './tar-command.ts';
 
 const [action, mode] = process.argv.slice(2);
 assert(['prepare', 'assert', 'workaround'].includes(action), 'Use: reproduce.ts prepare|assert|workaround control|symlinked');
@@ -57,7 +58,7 @@ if (action === 'prepare') {
   writeFileSync(join(consumer, 'index.js'), 'export { default } from "proper-lockfile";\n');
   writeFileSync(join(project, 'shim/package.json'), JSON.stringify({ name: 'proper-lockfile', version: '1.0.0', type: 'module', main: 'index.js' }));
   writeFileSync(join(project, 'shim/index.js'), `export default ${JSON.stringify(expected)};\n`);
-  execFileSync('tar', ['--create', '--gzip', '--file', join(root, 'consumer.tgz'), '--directory', dirname(consumer), 'package']);
+  execFileSync(tarCommand, ['--create', '--gzip', '--file', join(root, 'consumer.tgz'), '--directory', dirname(consumer), 'package']);
   writeFileSync(join(project, 'package.json'), JSON.stringify({ private: true, dependencies: { 'fixture-consumer': 'file:../consumer.tgz' } }));
   const state = { root, project, physical, alias };
   install({ root, project, store: mode === 'control' ? physical : alias });

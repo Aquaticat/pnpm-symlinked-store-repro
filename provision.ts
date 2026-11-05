@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, chmodSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { tarCommand } from './tar-command.ts';
 
 const artifacts = JSON.parse(readFileSync('tool-artifacts.json', 'utf8'));
 const version = process.env.PNPM_VERSION ?? '12.16.1';
@@ -35,7 +36,7 @@ async function install({ baseUrl, artifact, destination, strip }: {
   }
   const archive = join(destination, artifact.file);
   writeFileSync(archive, bytes);
-  execFileSync('tar', ['--extract', '--file', archive, '--directory', destination, ...strip], { stdio: 'inherit' });
+  execFileSync(tarCommand, ['--extract', '--file', archive, '--directory', destination, ...strip], { stdio: 'inherit' });
 }
 
 await install({ baseUrl: `https://nodejs.org/dist/v${artifacts.nodeVersion}`, artifact: nodeArtifact, destination: nodeRoot, strip: ['--strip-components=1'] });
@@ -46,3 +47,13 @@ assert.equal(execFileSync(join(nodeBin, `node${executableSuffix}`), ['--version'
 assert.equal(execFileSync(join(pnpmRoot, `pnpm${executableSuffix}`), ['--version'], { encoding: 'utf8' }).trim(), version);
 if (process.env.GITHUB_PATH) appendFileSync(process.env.GITHUB_PATH, `${nodeBin}\n${pnpmRoot}\n`);
 console.log(`Ready: Node ${artifacts.nodeVersion}, pnpm ${version}, ${platform}`);
+
+if (process.env.WITH_NEXTEST === '1') {
+  const nextest = artifacts.nextest;
+  const artifact = nextest[platform];
+  assert(artifact, `No pinned nextest artifact for ${platform}`);
+  const destination = resolve('.tools', 'nextest');
+  await install({ baseUrl: `https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-${nextest.version}`, artifact, destination, strip: [] });
+  assert(execFileSync(join(destination, 'cargo-nextest'), ['--version'], { encoding: 'utf8' }).includes(nextest.version));
+  if (process.env.GITHUB_PATH) appendFileSync(process.env.GITHUB_PATH, `${destination}\n`);
+}

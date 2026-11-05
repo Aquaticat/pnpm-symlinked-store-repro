@@ -1,0 +1,28 @@
+name: Verify pnpm source prototype
+on:
+  push:
+    branches: [main]
+    paths: [patches/**, verify-prototype.ts, provision.ts, tar-command.ts, tool-artifacts.json, .github/workflows/verify-prototype.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      PNPM_VERSION: 12.16.1
+      WITH_NEXTEST: '1'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: pnpm/pnpm
+          ref: b4a2abfcb7cd17692ea90cea15ce7457fa7b4260
+          path: upstream
+          persist-credentials: false
+      - name: Install checksum-pinned verification tools
+        run: node provision.ts
+      - name: Prove the regression fails before the fix and the symlink group passes after it
+        run: node verify-prototype.ts

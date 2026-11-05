@@ -17,4 +17,4 @@ run = "node reproduce.ts assert symlinked"
 run = "node reproduce.ts workaround symlinked"
 
 [tasks."lint:types"]
-run = "node node_modules/typescript/bin/tsc --noEmit --module nodenext --target es2024 --types node provision.ts reproduce.ts"
+run = "node node_modules/typescript/bin/tsc --noEmit --allowImportingTsExtensions --module nodenext --target es2024 --types node provision.ts reproduce.ts verify-prototype.ts"

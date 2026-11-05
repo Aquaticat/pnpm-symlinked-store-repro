@@ -2,6 +2,7 @@ name: Reproduce broken store links
 on:
   push:
     branches: [main]
+    paths: [reproduce.ts, provision.ts, tar-command.ts, tool-artifacts.json, .github/workflows/reproduce.yml]
   workflow_dispatch:
 permissions:
   contents: read
