@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { tarCommand } from './tar-command.ts';
 
 const [action, mode] = process.argv.slice(2);
@@ -23,7 +23,8 @@ function fixtureEnvironment(root: string) {
   mkdirSync(config, { recursive: true });
   const npmrc = join(config, 'npmrc');
   writeFileSync(npmrc, '');
-  return { ...inherited, CI: 'true', XDG_CONFIG_HOME: config, NPM_CONFIG_USERCONFIG: npmrc, PNPM_CONFIG_NPMRC_AUTH_FILE: npmrc };
+  // pnpm v10 forcibly disables the requested global virtual store when CI is true.
+  return { ...inherited, CI: 'false', XDG_CONFIG_HOME: config, NPM_CONFIG_USERCONFIG: npmrc, PNPM_CONFIG_NPMRC_AUTH_FILE: npmrc };
 }
 
 /** Install the same synthetic consumer with the chosen spelling of its store path. */
@@ -33,11 +34,12 @@ function install({ root, project, store }: { root: string; project: string; stor
 }
 
 /** Check the actual Node import, and print the installed link for diagnosis. */
-function assertImport(state: { root: string; project: string }) {
+function assertImport(state: { root: string; project: string; physical: string }) {
+  const consumer = realpathSync(join(state.project, 'node_modules/fixture-consumer'));
+  assert(consumer.startsWith(state.physical + sep), `The test must exercise the shared virtual store: ${consumer}`);
   const result = spawnSync(process.execPath, ['--input-type=module', '--eval', 'console.log((await import("fixture-consumer")).default)'], { cwd: state.project, encoding: 'utf8', env: fixtureEnvironment(state.root) });
   process.stdout.write(result.stdout ?? '');
   process.stderr.write(result.stderr ?? '');
-  const consumer = realpathSync(join(state.project, 'node_modules/fixture-consumer'));
   const link = join(dirname(consumer), 'proper-lockfile');
   console.log(JSON.stringify({ node: process.version, pnpm: version, mode, consumer, link: readlinkSync(link), targetExists: existsSync(link), importExit: result.status }));
   assert.equal(result.status, 0, 'Expected the installed consumer to import its declared proper-lockfile dependency');
