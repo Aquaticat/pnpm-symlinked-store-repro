@@ -1,0 +1,49 @@
+name: Reproduce broken store links
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            pnpm: 12.16.1
+          - os: ubuntu-latest
+            pnpm: 12.18.0
+          - os: ubuntu-latest
+            pnpm: 11.28.11
+          - os: ubuntu-latest
+            pnpm: 10.34.9
+          - os: macos-14
+            pnpm: 12.18.0
+          - os: windows-latest
+            pnpm: 12.18.0
+    runs-on: ${{ matrix.os }}
+    env:
+      PNPM_VERSION: ${{ matrix.pnpm }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - name: Install checksum-pinned Node and pnpm
+        run: node --input-type=module < provision.ts
+      - name: Install with a real store directory
+        run: node reproduce.ts prepare control
+      - name: Assert the real-directory control resolves
+        run: node reproduce.ts assert control
+      - name: Install with a symlinked store directory
+        id: symlinked_install
+        run: node reproduce.ts prepare symlinked
+      - name: Assert the symlinked store resolves its dependency
+        run: node reproduce.ts assert symlinked
+      - name: Verify the canonical-path workaround
+        if: always() && steps.symlinked_install.outcome == 'success'
+        run: node reproduce.ts workaround symlinked

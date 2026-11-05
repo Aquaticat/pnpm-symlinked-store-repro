@@ -1,0 +1,20 @@
+[tasks."toolchain:install"]
+run = "node provision.ts"
+
+[tasks."prepare:control"]
+run = "node reproduce.ts prepare control"
+
+[tasks."assert:control"]
+run = "node reproduce.ts assert control"
+
+[tasks."prepare:symlinked"]
+run = "node reproduce.ts prepare symlinked"
+
+[tasks."assert:symlinked"]
+run = "node reproduce.ts assert symlinked"
+
+[tasks."assert:workaround"]
+run = "node reproduce.ts workaround symlinked"
+
+[tasks."lint:types"]
+run = "tsc --noEmit --module nodenext --target es2024 --types node provision.ts reproduce.ts"
